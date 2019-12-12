@@ -1,0 +1,706 @@
+---
+title: "test"
+author: "Cindy Herrera"
+date: "8/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r echo=TRUE}
+# Its good practice to keep all library packages at top
+# Setup data for ggplot and turn off scientific notation like 1e+06
+options(scipen = 999)
+warn.conflicts = FALSE
+library(rmarkdown)
+library(knitr)
+library(convertr)
+suppressMessages(library(tidyr))
+suppressMessages(library(stringr))
+suppressMessages(library(stringi))
+suppressMessages(library(dplyr))
+suppressMessages(library(forcats))
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+suppressMessages(library(Hmisc))
+suppressMessages(library(lubridate))
+suppressMessages(library(shiny))
+suppressMessages(library(tidyverse))
+suppressMessages(library(readxl))
+suppressMessages(library(readr))
+suppressMessages(library(scales))
+suppressMessages(library(ggfortify)) 
+suppressMessages(library(tseries)) 
+suppressMessages(library(astsa))
+```
+
+
+
+## Gun Violence In the US
+I was looking to find a good amount of data that went back far enough in time to understand if crime rate has increase or decline heavily due to social engineering. Honestly this wasn’t easy, due to dataset were either only 5 to 10 in size anything larger this required some type of fee or require a government ID for access.  In this report I have taken three data set a about the crime rate in the US first data set tells about the different crimes that happened in US and other two defines the crimes happens using the different weapons.  I am still working on this, I had a issue with iTunes affecting my OS with virus and had to start to bare bones, I am going to try to recreate the geographic mapping which makes me sad that I lost it but we shall see.  Most of the crimes are not answered to police, in this way are not unraveled – for an assortment of reasons, individuals feel it's an individual issue, people in general don't see the police would not or couldn't do anything to them help. 
+
+## Data importing, viewing - gathered from Kaggle
+In R studio we can import the data set using the R Commander to import dataset>From Text (base) then select the CSV data file to import. This function will allow RStudio to read.csv for reading the CSV data file and as we have three files that is data sets which are in CSV format only CSV here indicated that it is comma separated file the code which is used for importing the CSV files is given as:
+```{r chuck}
+crimedata1 <- read.csv("~/Desktop//520 final data/database.csv", header = TRUE)
+suppressMessages(attach(crimedata1))
+options(warn = -1)
+head(crimedata1)
+```
+
+```{r chuck, echo=TRUE}
+crimedata2 <- read.csv("~/Desktop/520 final data/cps_01_formatted.csv", header = TRUE)
+suppressMessages(attach(crimedata2))
+options(warn = -1)
+head(crimedata2)
+```
+
+#make our theme for map
+
+```{r chuck, echo=TRUE}
+theme.map <- theme(text = element_text(family = 'Helvetica Neue', color = "black"), 
+                   panel.background = element_rect(fill = "#E5D8BD"), 
+                   plot.background = element_rect(fill = "#E5D8BD"),
+                   legend.background = element_rect(fill = "#E5D8BD"),
+                   panel.grid = element_blank(), plot.title = element_text(size = 15, face = 'bold'),
+                   plot.subtitle = element_text(size = 10), legend.key = element_blank(), 
+                   axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank()
+)
+```
+
+```{r chuck, echo=TRUE}
+crimedata3 <- read.csv("~/Desktop/520 final data/gun-violence-data_01-2013_03-2018.csv", header = TRUE)
+suppressMessages(attach(crimedata3))
+options(warn = -1)
+head(crimedata3)
+```
+
+
+
+```{r chuck, echo=TRUE}
+dim(crimedata1)
+dim(crimedata2)
+dim(crimedata3)
+```
+
+```{r chuck, echo=TRUE}
+anyDuplicated(crimedata1$Record.ID)
+```
+
+```{r chuck, echo=TRUE}
+names(crimedata1)
+```
+
+## going to change naming to lower case going forward because I am bad a typos
+```{r chuck, echo=TRUE}
+names(crimedata1) <- tolower(names(crimedata1))
+
+names(crimedata1)
+```
+
+
+## Renamed the data sources
+This command will create a dataframe called ‘crimedata#’ to consolidate the file names for use and keeping it simple to work with along the analysis so we don’t have large names to type out. 
+
+We can clean the data using the remove method in the particular data set and hence can clean the data as shown below 
+```{r chuck, echo=TRUE}
+summary(crimedata1)
+summary(crimedata2)
+summary(crimedata3)
+```
+
+# checking for missing data
+```{r chuck, echo=TRUE}
+is.na(crimedata1)
+is.na(crimedata2)
+is.na(crimedata3)
+
+```
+
+# Cleaning NA's
+In the above data set all NA values are removed with 0 
+Here is a clean summary of each dataset:
+```{r chuck, echo=TRUE}
+# below dataset all NA values are removed with 0
+cleancrimedata1 <- na.omit(crimedata1)
+str(cleancrimedata1)
+
+cleancrimedata2 <- na.omit(crimedata1)
+str(cleancrimedata2)
+
+cleancrimedata3 <- na.omit(crimedata1)
+str(cleancrimedata3)
+```
+# looking at the mean
+
+
+```{r chuck, echo=TRUE}
+summary(crimedata1)
+```
+
+
+```{r chuck, echo=TRUE}
+summary(crimedata2)
+```
+
+What is consistent data can be viewed as technically correct data where it fits into statistical analysis.  Then as we start exploring into open source data there is the unknown side of things where we have to find a way to verify and validate the data with other sources when we clean the data to make it into a consistent data if this makes sense.  The process between the book, DataCamp and other sources are all consistent with this:
+1.	Identify the error or inconsistency in the data set. For example, an if my victim.age category variable is constrained to non-negative values.
+2.	Selection of the field or fields causing the inconsistency. This is trivial in the case of a univariate demand as in the previous step, but may be more cumbersome when cross-variable relations are expected to hold. For example, the marital status of a child must be unmarried (we will all come across this one at some point). In the case of a violation it is not immediately clear whether age, marital status or both are wrong.
+3.	Correction of the fields that are deemed erroneous by the selection method. This may be done through deterministic (model-based) or stochastic methods.
+When detecting and localizing of errors in the dataset for missing values represent by NA in R, we can use the is.na function or resulting logical can be used to remove incomplete records from the data.frame. Alternatively the na.omit function, does the same. The complete.cases function detects rows in a data.frame that do not contain any missing value, so it’s nice quality check in a way.  If you have duplicate data or NA hiding around somewhere it’s going to throw off the whole analysis and all you have is junk data.
+
+```{r chuck, echo=TRUE}
+# load the lubridate package
+
+set.seed(1)
+zip <- sample(100:201, 1000, replace = TRUE)
+outcome <- rbinom(1000, 1, 0.23)
+
+
+# create year and month variables
+kids_crimes_ <- read_excel("~/Desktop/520 final data/kids crimes .xlsx")
+kids_crimes_$Year <- year(kids_crimes_$Date)
+
+# names of month instead of the number
+kids_crimes_$month <- month(kids_crimes_$Date, label = TRUE)
+
+# subset the data, use which function to return indices of observations 
+crime1990 <- kids_crimes_[which(kids_crimes_$Year >= 1990), ]
+
+```
+## Plot of Months with Fatalities
+```{r chuck,  echo=TRUE}
+# build the plot of Months with Fatalities
+ggplot(crime1990, aes(x = Month, y = Fatalities)) + geom_col(fill = "lightblue", colour = "black")
+
+
+```
+
+
+
+
+```{r chuck, echo=TRUE}
+state_plot <- function(x) {
+  foo$x <- foo[,x]
+ggplot(data = smap, mapping = aes(x = long, y= lat , group = group), na.rm=TRUE) + geom_polygon(data = foo , aes(fill = x), color = "grey", size = 0.05) + labs(fill = x) + scale_fill_gradientn(colors = c("white" ,"#FDAE61" ,"#F46D43", "#D53E4F") , values = scales::rescale(c(5, 10, 15,20,40))) + theme.map
+}
+
+```
+
+
+
+## I broke my map.. ugh so sad...
+```{r echo=TRUE}
+state_plot("Fatalities") + labs(title = "US School Shootings 1990 - present", subtitle="The States of Virginia, Connecticut, Florida and Colorado recorded highest student and school staff fatalities",caption="Source:https://www.kaggle.com/ecodan/school-shootings-us-1990present", fill = str_c('Fatalities'))
+```
+
+
+
+```{r echo=TRUE}
+sapply(crimedata1[1,],class)
+```
+
+
+```{r echo=TRUE}
+length(crimedata1$crime.solved[crimedata1$crime.solved == "Yes"])
+```
+
+```{r echo=TRUE}
+crimedata1$victim.age[crimedata1$victim.age==998]<-98
+
+crimedata1$perpetrator.age[is.na(crimedata1$perpetrator.age)]<- 1
+```
+
+
+```{r echo=TRUE}
+levels(crimedata1$crime.solved)
+```
+
+## Going to create some filtering 
+```{r chuck, echo=TRUE}
+crimedata1.solved <- crimedata1 %>% filter(
+  crime.solved    == "Yes" &
+    victim.sex      != "Unknown" &
+    perpetrator.sex != "Unknown" &
+    relationship    != "Unknown"
+)%>%
+  droplevels()
+
+
+crimedata1.solved$victim.age[crimedata1.solved$victim.age==998]<-98
+
+crimedata1.solved$perpetrator.age[is.na(crimedata1.solved$perpetrator.age)]<- 1
+
+
+girl.boy.crime<-crimedata1.solved %>% filter(
+                                    relationship    %in% c("Girlfriend","Boyfriend") &
+                                    victim.age      >= 18 &
+                                    perpetrator.age >= 18 &
+                                    victim.sex      != "Unknown" &
+                                    perpetrator.sex != "Unknown"
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,victim.race,victim.ethnicity,perpetrator.sex,
+         perpetrator.age,perpetrator.race,perpetrator.ethnicity,relationship,weapon,record.source)
+
+# table(girl.boy.crime$victim.sex)
+# Female   Male 
+#   7468   3619
+# table(girl.boy.crime$perpetrator.sex)
+# Female   Male 
+#   3460   7627
+
+# something wrong !!!
+
+girl.boy.crime<-girl.boy.crime[!(girl.boy.crime$victim.sex==girl.boy.crime$perpetrator.sex),]
+
+# table(girl.boy.crime$victim.sex)
+# Female   Male 
+# 7434   3426 
+# table(girl.boy.crime$perpetrator.sex)
+# Female   Male 
+# 3426   7434 
+
+# now it is OK 
+
+############################################
+
+# Who killed Who (Familicide). Unfortunately !
+
+
+crimedata1.solved <- crimedata1.solved %>% 
+  mutate(who.killed.who = case_when(.$relationship=="Brother" &
+                                      .$perpetrator.sex =="Male" ~ "Brother Killed by Brother",
+                                    .$relationship=="Brother" & 
+                                      .$perpetrator.sex =="Female" ~ "Brother Killed by Sister",
+                                    .$relationship=="Sister" & 
+                                      .$perpetrator.sex =="Female" ~ "Sister Killed by Sister",
+                                    .$relationship=="Sister" & 
+                                      .$perpetrator.sex =="Male" ~ "Sister Killed by Brother",
+                                    .$relationship=="Mother" & 
+                                      .$perpetrator.sex =="Male" ~ "Mother Killed by Son",
+                                    .$relationship=="Mother" & 
+                                      .$perpetrator.sex =="Female" ~ "Mother Killed by Sister",
+                                    .$relationship=="Son" & 
+                                      .$perpetrator.sex =="Female" ~ "Son Killed by Mother",
+                                    .$relationship=="Son" & 
+                                      .$perpetrator.sex =="Male" ~ "Son Killed by Father",
+                                    .$relationship=="Daughter" & 
+                                      .$perpetrator.sex =="Female" ~ "Daughter Killed by Mother",
+                                    .$relationship=="Daughter" & 
+                                      .$perpetrator.sex =="Male" ~ "Daughter Killed by Father",
+                                    .$relationship=="Wife" & 
+                                      .$perpetrator.sex =="Male" ~ "Wife Killed by Husband",
+                                    .$relationship=="Husband" & 
+                                      .$perpetrator.sex =="Female" ~ "Husband Killed by wife",
+                                    .$relationship=="Father" & 
+                                      .$perpetrator.sex =="Female" ~ "Father Killed by Daughter",
+                                    .$relationship=="Father" & 
+                                      .$perpetrator.sex =="Male" ~ "Father Killed by Son",
+                                    TRUE~"UKN"))
+                                    
+#
+
+ex.husband.ex.wife.crime<-crimedata1.solved %>% filter(
+                                            relationship     %in% c("Ex-Husband","Ex-Wife") &
+                                            victim.age       >= 18 &
+                                            perpetrator.age  >= 18 &
+                                            victim.sex      != "Unknown" &
+                                            perpetrator.sex != "Unknown"
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon)
+
+# there are Female in both features victim .sex and perpetrator.sex ..and Male as well which is wrong..!
+# so I consider that the victim sex to be my reference because it is the subject of this dataset.
+ex.husband.ex.wife.crime$relationship <- ifelse(ex.husband.ex.wife.crime$victim.sex=="Male",
+                                                "Ex-Husband","Ex-Wife")
+# I think there was some typo here 
+
+# OK let's move on
+
+ex.husband.ex.wife.crime$older.or.younger <- ifelse(ex.husband.ex.wife.crime$relationship=="Ex-Husband" &
+                                                      ex.husband.ex.wife.crime$perpetrator.age < ex.husband.ex.wife.crime$victim.age,
+                                                    "Ex-wife Killed an old Ex-Husband",
+                                                    ifelse(ex.husband.ex.wife.crime$relationship=="Ex-Husband" &
+                                                             ex.husband.ex.wife.crime$perpetrator.age > ex.husband.ex.wife.crime$victim.age,
+                                                           "Ex-wife Killed a young Ex-Husband",
+                                                           ifelse(ex.husband.ex.wife.crime$relationship=="Ex-Wife" &
+                                                                    ex.husband.ex.wife.crime$perpetrator.age > ex.husband.ex.wife.crime$victim.age,
+                                                                  "Ex- Husband Killed a young Ex-Wife",
+                                                                  ifelse(ex.husband.ex.wife.crime$relationship=="Ex-Wife" &
+                                                                           ex.husband.ex.wife.crime$perpetrator.age < ex.husband.ex.wife.crime$victim.age,
+                                                                         "Ex-Husband Killed an old Ex-Wife","Smae Age"))))
+ndf.by.weapon <- crimedata1.solved %>% filter(
+                                  weapon != "Unknown" &
+                                  victim.sex != "Unknown"&
+                                  perpetrator.sex != "Unknown" &
+                                  victim.age       >= 18 &
+                                  perpetrator.age  >= 18
+) %>% 
+  droplevels()%>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon)
+         
+
+# Son and Father
+
+b.w.son <- crimedata1.solved %>% filter(grepl("Son Killed", who.killed.who))
+
+b.w.son <- b.w.son [,c(1,11,12,13,14,16,17,18,20,21,25)]
+
+b.w.son <- separate(data = b.w.son,col = who.killed.who , into = c("son","parent"), sep = " by ")
+
+b.w.son <- b.w.son %>% filter(
+     victim.race       %in% c("Black","White") &
+     perpetrator.race  %in% c("Black","White") &
+     victim.age        >= 18 &
+     perpetrator.age   >= 18 &
+     parent            == "Father" &
+     weapon           != "Unknown") %>%
+  
+  droplevels()
+  
+
+b.w.son$son.father <- sprintf("a %s %s by a %s %s Using a %s",
+                              b.w.son$victim.race,
+                              b.w.son$son,
+                              b.w.son$perpetrator.race,
+                              b.w.son$parent,
+                              b.w.son$weapon)
+```
+
+
+```{r chuck, echo=TRUE}
+crimedata1.solved$who.killed.who.sex <- ifelse(crimedata1.solved$perpetrator.sex=="Female"& crimedata1.solved$victim.sex=="Male",
+                                    "Male Killed by Female",
+                                    ifelse(crimedata1.solved$perpetrator.sex=="Male"& crimedata1.solved$victim.sex=="Female",
+                                          "Female Killed by Male",
+                                          ifelse(crimedata1.solved$perpetrator.sex =="Male" & crimedata1.solved$victim.sex == "Male",
+                                                 "Male Killed by Male",
+                                                 ifelse(crimedata1.solved$perpetrator.sex =="Female" & crimedata1.solved$victim.sex == "Female",
+                                                        "Female Killed by Female", "UNK"))))
+```
+
+```{r chuck, echo=TRUE}
+employee.employer.crime<-crimedata1.solved %>% filter(
+                                           relationship     %in% c("Employee","Employer") &
+                                           victim.age       >= 18 &
+                                           perpetrator.age  >= 18 &
+                                           victim.sex      != "Unknown" &
+                                           perpetrator.sex != "Unknown"
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon,who.killed.who.sex)
+friend.crime<-crimedata1.solved %>% filter(
+                                relationship       == "Friend" &
+                                victim.sex      != "Unknown" &
+                                victim.age       >= 18 &
+                                perpetrator.age  >= 18 &
+                                perpetrator.sex != "Unknown"
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon)
+
+friend.crime$who.killed.who.Friend.sex <- ifelse(friend.crime$perpetrator.sex == "Female" & friend.crime$victim.sex == "Male",
+                                                 "Friends Male Killed by Female",
+                                                 ifelse(friend.crime$perpetrator.sex == "Male"& friend.crime$victim.sex == "Female",
+                                                        "Friends Female Killed by Male",
+                                                        ifelse(friend.crime$perpetrator.sex == "Male" & friend.crime$victim.sex == "Male",
+                                                               "Friends Male Killed by Male",
+                                                               ifelse(friend.crime$perpetrator.sex == "Female" & friend.crime$victim.sex == "Female",
+                                                                      "Friends Female Killed by Female", "UNK"))))
+
+
+by.race <-crimedata1.solved %>% filter(
+    victim.age       >= 18 &
+    perpetrator.age  >= 18 &
+    victim.race      != "Unknown" &
+    perpetrator.race != "Unknown"
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.race,perpetrator.race,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon)
+         
+
+by.weapon <- summarise(group_by(ndf.by.weapon,weapon),freq.by.weapon =n())%>%
+  arrange(desc(freq.by.weapon))
+
+by.weapon.sex <- summarise(group_by(ndf.by.weapon,weapon,victim.sex),freq.by.weapon =n())%>%
+  arrange(desc(freq.by.weapon))
+
+ndf.by.weapon$sex.weapon.used <- sprintf("%s Killed by %s Using a %s",
+                                         ndf.by.weapon$victim.sex,
+                                         ndf.by.weapon$perpetrator.sex,
+                                         ndf.by.weapon$weapon)
+
+
+by.ndf.by.weapon.used <- summarise(group_by(ndf.by.weapon,sex.weapon.used),
+                                   freq.by.weapon.used =n())%>%
+  arrange(desc(freq.by.weapon.used))
+
+
+ndf.by.weapon.geom.points <-ndf.by.weapon %>% filter(
+    sex.weapon.used   %in% c("Male Killed by Male Using a Handgun",
+                          "Male Killed by Male Using a Knife",
+                          "Female Killed by Male Using a Handgun",
+                          "Male Killed by Male Using a Blunt Object",
+                          "Female Killed by Male Using a Knife")
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon,sex.weapon.used) 
+         
+crimedata1.solved.age <- crimedata1.solved %>% filter(
+    victim.age       >= 18 &
+    perpetrator.age  >= 18 &
+    victim.race      != "Unknown" &
+    perpetrator.race != "Unknown"
+) %>%
+  droplevels()
+  
+ f.m.handgun <-ndf.by.weapon %>% filter(
+  sex.weapon.used   %in% c("Female Killed by Male Using a Handgun",
+                           "Male Killed by Female Using a Handgun")
+) %>%
+  droplevels() %>%
+  select(record.id, agency.type,city,state,year,month,crime.type,
+         crime.solved,victim.sex,victim.age,perpetrator.sex,
+         perpetrator.age,relationship,weapon,sex.weapon.used)
+
+
+crimedata1.solved.age$vic.age.group <- cut(crimedata1.solved.age$victim.age, 
+                       breaks = c(18, 30, 40, 50,60, 70, 80, 90, 100), 
+                       labels = c("18-30 yrs", "30-40 yrs",
+                                  "40-50 yrs", "50-60 yrs","60-70 yrs","70-80 yrs",
+                                  "80-90 yrs","90-100 yrs"),
+                       right = FALSE)
+
+crimedata1.solved.age$per.age.group <- cut(crimedata1.solved.age$perpetrator.age, 
+                               breaks = c(18, 30, 40, 50,60, 70, 80, 90, 100), 
+                               labels = c("18-30 yrs", "30-40 yrs",
+                                          "40-50 yrs", "50-60 yrs","60-70 yrs","70-80 yrs",
+                                          "80-90 yrs","90-100 yrs"),
+                               right = FALSE)
+```
+
+## Summarizing & Grouping
+```{r}
+by.year <- summarise(group_by(crimedata1.solved,year),freq.year =n())%>%
+  arrange(desc(freq.year)) 
+
+by.month <- summarise(group_by(crimedata1.solved,month),freq.month =n())%>%
+  arrange(desc(freq.month))
+
+
+by.family <- summarise(group_by(crimedata1.solved[crimedata1.solved$who.killed.who!="UKN", ],who.killed.who),total.number.re =n())%>%
+    arrange(desc(total.number.re))
+
+by.state <- summarise(group_by(crimedata1.solved,state),freq.by.state =n())%>%
+  arrange(desc(freq.by.state))
+
+
+by.weapon <- summarise(group_by(ndf.by.weapon,weapon),freq.by.weapon =n())%>%
+  arrange(desc(freq.by.weapon))
+
+by.weapon.sex <- summarise(group_by(ndf.by.weapon,weapon,victim.sex),freq.by.weapon =n())%>%
+  arrange(desc(freq.by.weapon))
+
+ndf.by.weapon$sex.weapon.used <- sprintf("%s Killed by %s Using a %s",
+                                         ndf.by.weapon$victim.sex,
+                                         ndf.by.weapon$perpetrator.sex,
+                                         ndf.by.weapon$weapon)
+
+
+by.ndf.by.weapon.used <- summarise(group_by(ndf.by.weapon,sex.weapon.used),
+                                   freq.by.weapon.used =n())%>%
+  arrange(desc(freq.by.weapon.used))
+```
+
+```{r chuck, echo=TRUE}
+empyr.empee.sex <- employee.employer.crime %>%
+                                                group_by(victim.sex, 
+                                                perpetrator.sex,
+                                                who.killed.who.sex,
+                                                 relationship) %>%
+                  summarise(sex.freq = n()) %>%
+                  arrange(victim.sex, perpetrator.sex)
+
+by.p.race.group <- summarise(group_by(by.race,perpetrator.race,victim.race),total.by.race = n()) %>%
+  arrange(total.by.race)
+
+
+by.p.race.group$who.killed.who.race <- sprintf("%s Killed by %s",
+                                               by.p.race.group$victim.race,
+                                               by.p.race.group$perpetrator.race)
+
+by.p.race.group$freq <- round(by.p.race.group$total.by.race/sum(by.p.race.group$total.by.race)*100,2)
+
+
+by.p.race.group$freq<- paste(by.p.race.group$freq,"%",sep="")
+
+
+top4.by.race <- by.p.race.group[16:13,c(4,3,5)]
+
+
+table.by.race <- tableGrob(top4.by.race[ ,c(1,3)], rows=NULL)
+
+by.v.age.group <- summarise(group_by(crimedata1.solved.age,vic.age.group),total.by.group.v = n()) %>%
+                            arrange(total.by.group.v)
+
+by.p.age.group <- summarise(group_by(crimedata1.solved.age,per.age.group),total.by.group.p = n()) %>%
+  arrange(total.by.group.p)
+
+
+by.v.p.age.group <- summarise(group_by(crimedata1.solved.age,vic.age.group,per.age.group,perpetrator.sex,
+                                       victim.sex),
+                              total.by.group.vp = n()) %>%
+  arrange(total.by.group.vp)
+  
+by.son.father.group <- summarise(group_by(b.w.son,son.father),total.by.son.father = n()) %>%
+  arrange(total.by.son.father)
+```
+
+## Plots
+```{r chuck, echo=TRUE}
+
+homi.theme<-theme(
+  axis.text = element_text(size = 8),
+  axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0.5),
+  axis.title = element_text(size = 14),
+  panel.grid.major = element_line(color = "grey"),
+  panel.grid.minor = element_blank(),
+  panel.background = element_rect(fill = "snow1"),
+  legend.position = "right",
+  legend.justification = "top", 
+  legend.background = element_blank(),
+  panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+
+ tt.homi.f <- ttheme_minimal(
+    core=list(bg_params = list(fill = "azure", col="darkblue"),
+              fg_params=list(fontface=6)),
+    colhead=list(fg_params=list(col="navyblue", fontface=4L)))
+```
+
+
+
+
+```{r chuck, echo=TRUE}
+by.son.father.group$son.father <- fct_inorder(by.son.father.group$son.father)
+ggplot(by.son.father.group[by.son.father.group$total.by.son.father>=10, ],
+       aes(x = son.father,y = total.by.son.father))+
+       geom_bar(stat = "identity",fill="steelblue", width = 0.5)+
+  homi.theme+
+  theme(axis.text.x=element_text(size= 8, angle=90,hjust = 0.5),
+        axis.title.y=element_text(size=10),
+        axis.title.x=element_text(size=10))+
+  theme(plot.title = element_text(size = 10))+
+  ggtitle("incident VS Son VS Father >= 10")+
+  labs(x="Son and Father",
+       y="Incident Number")
+```
+
+
+
+
+```{r chuck, echo=TRUE}
+ggplot(f.m.handgun,aes(x=victim.age,y=perpetrator.age))+
+  geom_point(stat="identity", col="steelblue", size=0.3)+
+  facet_wrap(~ sex.weapon.used)+
+  geom_smooth(method = "lm",col="darkred")+
+  homi.theme+
+  theme(axis.text.x=element_text(size= 6, angle=90,hjust = 0.5),
+        axis.title.y=element_text(size=10),
+        axis.title.x=element_text(size=10))+
+  theme(plot.title = element_text(size = 10))+
+  theme(strip.text = element_text(size=9,color ="darkred"))+
+  ggtitle("Incident \n Sex VS Age \n Using Handgun")+
+  labs(x="Victim Age",
+       y="Perpetrator Age")
+```
+
+
+
+
+```{r chuck, echo=TRUE}
+ggplot(by.v.p.age.group,aes(x = per.age.group, vic.age.group,y = total.by.group.vp))+
+  geom_bar(stat = "identity",fill="steelblue",width=0.5)+
+  facet_wrap(~ vic.age.group)+
+  homi.theme+
+  theme(axis.text.x=element_text(size= 7, 
+        angle=90,hjust = 0.5),
+        axis.title.y=element_text(size=10),
+        axis.title.x=element_text(size=10))+
+  theme(plot.title = element_text(size = 10))+
+  theme(strip.text = element_text(size=10,color ="darkblue"))+
+  ggtitle("Age Group 18+ \n Victim VS perpetrator")+
+  labs(x="perpetrator",
+       y="Number of Incidents")
+```
+
+
+```{r chuck, echo=TRUE}
+ggplot(ndf.by.weapon.geom.points,aes(x=victim.age,y=perpetrator.age))+
+  geom_point(stat="identity", col="steelblue",size=0.5)+
+  facet_wrap(~ sex.weapon.used)+
+  geom_smooth(method="lm", size=0.6, col="darkred")+
+  homi.theme+
+  theme(axis.text.x=element_text(size= 6, angle=90,hjust = 0.5),
+        axis.title.y=element_text(size=10),
+        axis.title.x=element_text(size=10))+
+  theme(plot.title = element_text(size = 10))+
+  theme(strip.text = element_text(size=8,color ="darkblue"))+
+ggtitle("Top 5 \n incident VS Age VS Weapon")+
+  labs(x="Victim Age",
+       y="Perpetrator Age")
+```
+
+
+
+There are different ways to look at this data as from a student point of view which can be termed as the research bases analysis, from the crime suspecting officer way which can treat this analysis for the inquiries and predicting and removing the crimes as much as possible so that crime rate can be minimized and hence there will be no killing or theft which can been done  
+Yes, I want to slice and dice the data set as the data set is very vast so can’t be able to tackle whole data set with 200+ rows hence I have sliced the data to 50+ rows. There is a better way of representing this data by using ggpairs to display and compare how victims and perpetrators match up to separate them in different categories. Then there is the mapping tools, I wanted to become more familiar with the maptools and mapview packages which after the past few weeks of trial and error I am starting to become at ease with loading data into them (at the beginning it was a hot mess). On the other hand, I need to research how to plot locations without lat/long if there is way that doesn’t require spatial treatment. Plots are already been taken above which signifies the analysis which can be done with useful insights. 
+
+Summary
+Violent crime rate in the United States, have they fallen forcefully or expanded in the past 25 years (1993-2018)? Today we have various powerful factors like person to person communication stages individuals have simple access today, where in case of an episode they are advised promptly. On the off chance that we think to 1993, individuals depended on landlines, papers, TVs and the fortunate ones had a vehicle telephone or block telephone to convey.
+
+The analysis insights which have been evaluated in this report shows various conclusions and perspectives of crimes and also give immense sense so that the various aspects of the crimes can be suspected and found out so that the crime rates and crimes or killing can be minimized to the extent and also should able to tackle the situations and the particular case can be solved vary easily and fast using these insights.
+
+```{r}
+
+```
+
