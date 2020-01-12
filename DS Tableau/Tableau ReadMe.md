@@ -10,12 +10,12 @@ Each code file with display models used:
 * Interactive Filters
 
 
-# Datasets Used For Exploratory Data Analysis (EDA)
+## Datasets Used For Exploratory Data Analysis (EDA)
 The data used for displaying Tableau visualization are from:
 * Kaggle
 * UCI Machine Learning Repository
 * Social Media API connections
 
-## Projects for review are:
+## Projects For Review:
 1. Default Credit Card Analysis - predictive model for whether an account will default next month, given demographics and historical data
 2. Social Media Sentiment Analysis - display how negative sentiment impacts products and services
