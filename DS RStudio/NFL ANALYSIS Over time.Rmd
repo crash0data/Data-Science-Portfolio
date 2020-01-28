@@ -1,0 +1,478 @@
+---
+title: "NFL ANALYSIS FINAL PROJECT"
+author: "CINDY HERRERA"
+date: "November 1, 2019"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = TRUE,
+	warning = TRUE
+)
+```
+
+
+```{r Required libraries, message=FALSE, warning=FALSE}
+library(rpart.plot)
+library(caTools)
+library(ggpubr)
+library(scatterplot3d)
+library(reshape2)
+library(lubridate)
+library(scales)
+library(plotly)
+library(shiny)
+library(tidyverse)
+library(feather)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(gganimate)
+library(gifski)
+library(png)
+library(transformr)
+library(treemapify)
+library(ggbeeswarm)
+library(tidyr)
+library(nflscrapR)
+library(pheatmap)
+library(PythonInR)
+library(reticulate)
+library(viridis)
+library(viridisLite)
+library(date)
+library(magrittr)
+library(NLP)
+library(tm)
+library(qdapDictionaries)
+library(RColorBrewer) 
+library(qdapRegex)
+library(qdapTools)
+library(SnowballC) 
+library(wordcloud) 
+library(stringr)
+
+```
+
+# Abstract:
+
+The full research has been done on some particular d1 set regarding the players of the NFL from 2000 to 2017. One can expect the motive of this project is to give some useful information to the team management or any team franchise who are keen to take some player on their fitness or criminal record basis. The clearer the player is the more the chance of the team management to consider him as a potential player, specifically, a valuable and dedicated team of the team. Not only just team management requires such information to choose a player, there are huge betting or pools come along in the season of upcoming matches and hence a clarified and informative research on the players could be helpful to lots of areas. The passing stats, the criminal record, playing strategies lots of d1 have been taken regarding this and hence required huge determination to come along with some models which could explain the scoring potential of a team or a particular player. The visualization and the predictive modeling part has been introduced sequentially to have a better grip of the d1 and further interpretability of the results. 
+
+# Introduction:
+
+Its football season, people are gearing up for weekly games and some are participating in football pools. d1 can help with football pools, in fact, it can show football fans statistically how good or poorly their teams perform due to injuries or environmental elements. Do fans purely based their information on the previous season stats including core efficiency rates, turnover rates, penalty rates, and who was selected in the current NFL draft? NFL and MLB team's employee d1 scientist to track statistical information daily, convert it to insights and send it upstream to stakeholders. This is the goal of our project to understand what they analyze and how to not just replicate the storytelling but improve the element they may not include or thought of analyzing.
+
+# Methods:
+
+Basically, the methods we have applied here are mainly visualization and regression for predictive modeling. Regression analysis is the statistical method which actually determines the impact of other variable on a particular variable called response variable. The predictor variables that impact or explain the variance of the response variable are taken through a procedure. There are different measures for evaluating the model and they are R-squared, goodness of fit, etc. but before getting into the analysis one should be careful about the assumptions of the regression models. The assumptions are very vital to remember since violating the assumptions one could have serious implications in the inference part and thus the results can't be relied upon as they might be erroneous. 
+
+# NFL Arrest d1 analysis:
+
+Firstly, we proceed to analyze the arrest d1 analysis and the best way to do so is to check the d1 by visualization technique. So, the top 25 teams have been arranged based on the arrest activities. 
+
+```{r Reading in d1}
+d1 = read.csv("~/Desktop/DSC630/DSC630 FINAL PROJECT/NFL Arrest 2000 to 2017 Incidents.csv", header = T)
+d1$DATE = as.Date(d1$DATE, "%m/%d/%Y")
+f1 = as.data.frame(table(d1$TEAM))
+f2 = head(arrange(f1,desc(Freq)), n = 25)
+head(f2)
+f3 = rename(f2, Team = Var1, Arrest_count = Freq)
+
+p1 = ggplot(f3, aes(x = reorder(factor(Team), -Arrest_count), y = Arrest_count)) + 
+  geom_bar(stat = "identity", fill = "lightblue") + 
+  ggtitle("Frequency of Arrest by Team") +
+  geom_text(aes(label = Arrest_count), size = 4, family = "Times", colour = "red") +
+  xlab("Teams")
+element_text(angle = 90, hjust = 1, vjust = .5)
+p1
+
+```
+
+
+From the graph one can see that Minnesota is at the topmost position as far as criminal activity or the arrest incidents are concerned for the NFL teams. New York, on the other hand, can be seen to pop up at the end section of the first 25 teams. Also, the topmost team has a frequency rate of 49 as and that for the other top three teams seem to be quite close to that. 
+
+# Arrests based on position:
+
+```{r Graph Arrest by Team}
+f4 = group_by(d1, POSITION)
+f5 = summarise(f4, count = n())
+pos_plot = ggplot(f5, aes(x = POSITION, y = count)) + 
+  geom_bar(stat = "identity", fill = "#CC99CC") + ylab("Count of Arrest") + 
+  ggtitle("Frequency of Arrest by Position") + 
+  geom_text(aes(label = count), size = 4, family = "Times", colour = "red") 
+pos_plot
+
+```
+
+From the graph it is quite obvious that WIDE RECEIVERS get arrested the most. But this result seems to be biased for some obvious reasons as the NFL teams contain players who are mostly Wide Receivers. So, one could check the percentage frequency of for the position based analysis. 
+
+# The year when the most arrest took place:
+
+Since the d1 contains date as a potential attribute, one could have the question in mind that how time actually impacts arrest in some way. The most important thing that comes into mind when calculating such time series related things, is the trend present in the d1. Since the arrest d1 only contains the date as a single parameter we need to extract the year and month for the analysis. 
+
+```{r Analyze Arrest by Year}
+d1$YEAR = format(as.Date(d1$DATE, format="%m/%d/%Y"),"%Y")
+f8 = group_by(d1, YEAR)
+f9 = summarise(f8, count = n())
+year_plot = ggplot(f9, mapping = aes(x = YEAR, y = count, group = 1)) + 
+  geom_line(color = "#993399", size= 2) + 
+  geom_point(color = "#FFCC00", size = 3) + 
+  ggtitle("Arrest by Year") +
+  geom_text(aes(label = count, fontface=2), size = 5, family = "Times", colour = "red",) 
+year_plot
+```
+
+One can see that there are almost 70 arrests throughout the year of 2006 and that is the highest also for the range of the analysis from 2000 to 2017. The goofiest thing to notice is that after the year of 2013 there is a steep decrease in the arrest incidents and the pattern continued still the end of the time range.
+
+ 
+# Top 10 players who got arrested most of the time:
+
+```{r Organize by Top 10}
+CON = d1 %>%
+  mutate(Conference = ifelse(TEAM %in% c("BUF", "MIA", "NE", "NYJ", "DEN", "KC",
+  "OAK", "SD", "BAC", "CIN", "CLE", "PIT", "HOU", "IND", "JAC", "TEN", "LAC", 
+  "BAL"), "AFC", ifelse(TEAM %in% c("NYG", "DAL", "PHI", "WAS", "ARI", "STL", 
+  "SF", "SEA", "CHI", "DET", "GB", "MIN", "ATL", "CAR", "NO", "TB", "LAR" ), 
+  "NFC",ifelse(TEAM %in% c("Free agent"), "Free Agent",NA))))
+E1 = group_by(CON, NAME) %>%
+  dplyr::summarise(count= n()) %>%
+  arrange(desc(count))
+player_plot = ggplot(E1 [0:10,], aes(x= reorder(factor(NAME), count), 
+    y= count, alpha= count))+ geom_bar(stat = "identity", fill="#660066") + 
+  xlab("Name") + 
+  ylab("Count of Arrest") + 
+  ggtitle("Top 10 PLayers That Get Arrested") +
+  geom_text(aes(label = count, fontface=2), size = 5, family = "Times", colour = "red",) +
+  coord_flip()
+player_plot
+
+```
+
+From the graph, it is evident that Adam Jones is the player who got arrested most of the time during the time span of the analysis, with a total of 10 arrests. The next topmost players with most number of arrests are Kenny Britt and Chris Henry with seven and six arrests respectively. 
+
+# Some general Questions regarding some general facts:
+
+```{r Read Play by Play d1}
+d2 = read.csv("~/Desktop/DSC630/DSC630 FINAL PROJECT/nflplaybyplay2009to2016/NFL Play by Play 2009-2017 (v4).csv", 
+              header = T)
+```
+
+```{r Create 3rd Down group}
+d2_3rd_down<-subset(d2, down == 3)
+dim(d2_3rd_down)
+```
+```{r}
+d2_3rd_down$rid <- seq.int(nrow(d2_3rd_down))
+
+d2_3rd_down <- dplyr::select(d2_3rd_down,rid,GameID,TimeSecs,ydstogo,RushAttempt, PassAttempt,AirYards, FirstDown,posteam,DefensiveTeam,PlayAttempted,PassLocation,Receiver,Passer,Rusher,RunLocation,AbsScoreDiff,HomeTeam,AwayTeam,posteam_timeouts_pre,Field_Goal_Prob,Season)
+dim(d2_3rd_down)
+```
+
+
+If there are negative numbers then pass is short of yerd to gain. this could be helpful to predict response and inform playcalling. 
+```{r}
+d2_3rd_down$yactogain <- d2_3rd_down$AirYards-d2_3rd_down$ydstogo
+
+ggplot(data = d2_3rd_down,mapping = aes(x=yactogain)) + 
+  geom_freqpoly(mapping = aes(color = as.factor(FirstDown)),binwidth=1,na.rm=TRUE)
+```
+
+The histogram’s distribution implies that throwing the ball short of the marker skews towards not gaining the 1st down, while throwing the ball at or beyond the marker is more evenly distributed regarding acheiving the line to gain. This could help predict the negative value of our response variable.
+
+```{r 1st Downs on Marker or Beyond}
+ggplot(data = d2_3rd_down,mapping = aes(x = ydstogo)) + 
+  geom_freqpoly(mapping = aes(color = as.factor(FirstDown)),binwidth = 2,na.rm = TRUE) + 
+  ggtitle("1st Downs on Marker or Beyond") + 
+  labs(colour = "Type", 
+       x = "Concerta Peak1 Cmax Distribution",
+       y = "Density") 
+  
+
+```
+
+Before we start exploring the d1 and preparing it for modeling. We have to clean fix some errors within the d1 set. One of this issues is that 2 teams (chargers and rams) moved cities, but are annotated in multiple ways in the d1 set. We have to normalize the team names for both the offensive and defensive team fields. Additioanlly Jacksonville is annoted as JAC and JAX. We have to fix this as well.
+
+```{r}
+levels(d2_3rd_down$posteam)
+```
+
+```{r}
+levels(d2_3rd_down$posteam)[levels(d2_3rd_down$posteam)=="JAC"]<- "JAX"
+levels(d2_3rd_down$posteam)[levels(d2_3rd_down$posteam)=="STL"]<- "LA"
+levels(d2_3rd_down$posteam)[levels(d2_3rd_down$posteam)=="SD"]<- "LAC"
+levels(d2_3rd_down$DefensiveTeam)[levels(d2_3rd_down$DefensiveTeam)=="JAC"]<- "JAX"
+levels(d2_3rd_down$DefensiveTeam)[levels(d2_3rd_down$DefensiveTeam)=="STL"]<- "LA"
+levels(d2_3rd_down$DefensiveTeam)[levels(d2_3rd_down$DefensiveTeam)=="SD"]<- "LAC"
+
+levels(d2_3rd_down$HomeTeam)[levels(d2_3rd_down$HomeTeam)=="JAC"]<- "JAX"
+levels(d2_3rd_down$HomeTeam)[levels(d2_3rd_down$HomeTeam)=="STL"]<- "LA"
+levels(d2_3rd_down$HomeTeam)[levels(d2_3rd_down$HomeTeam)=="SD"]<- "LAC"
+levels(d2_3rd_down$AwayTeam)[levels(d2_3rd_down$AwayTeam)=="JAC"]<- "JAX"
+levels(d2_3rd_down$AwayTeam)[levels(d2_3rd_down$AwayTeam)=="STL"]<- "LA"
+levels(d2_3rd_down$AwayTeam)[levels(d2_3rd_down$AwayTeam)=="SD"]<- "LAC"
+
+
+levels(d2_3rd_down$posteam)
+```
+
+```{r}
+levels(d2_3rd_down$DefensiveTeam)
+```
+
+```{r}
+levels(d2_3rd_down$HomeTeam)
+```
+
+```{r}
+levels(d2_3rd_down$DefensiveTeam)
+```
+
+```{r}
+d2_3rd_down$posteam<-droplevels(d2_3rd_down$posteam, exclude = if(anyNA(levels(d2_3rd_down$posteam))) NULL else NA)
+levels(d2_3rd_down$posteam)
+```
+
+Graph to show the number of total first downs for each team. We will create a seperate d1 frame for the visualization
+```{r}
+totalFirst = filter(d2_3rd_down,FirstDown=="1")
+```
+
+
+```{r Number of 3rd down conversions per Team by Season}
+totalFirst$Season<-as.factor(totalFirst$Season)
+ggplot(totalFirst, aes(x=posteam, fill=Season)) + geom_bar() + coord_flip() + labs(x= "Offensive Team", y="3rd Down Conversions") + guides(fill = guide_legend(reverse = TRUE))
+```
+
+
+```{r Number of 3rd and long situations per Team }
+d2_3rd_down %>%dplyr::filter(ydstogo >6)%>%filter(!is.na(posteam))%>%
+  ggplot(mapping = aes(x=posteam,fill=posteam)) +  geom_bar() + coord_flip() + labs(x= "Offensive Team", y="Number of 3rd and Longs (>6yrds)")
+```
+
+
+```{r TOP 25 Receivers Targeted on 3rd & Long}
+d2_3rd_down$Season <- as.factor(d2_3rd_down$Season)
+d2_3rd_down %>%dplyr::filter(ydstogo >6)%>%filter(!is.na(Receiver)) %>%dplyr::count(Receiver,Season)%>%dplyr::top_n(20)%>%
+  ggplot(mapping = aes(x = Season, y = Receiver,fill = n)) + 
+  geom_raster(hjust = 0, vjust = 0) + (theme(axis.text.y = element_text(lineheight = .5, size = 7))) + 
+  ggtitle("Top 25 Receivers Targeted on 3rd & Long") 
+```
+
+```{r Top 50 Receivers Targeted on 3rd Down by Pass Location}
+d2_3rd_down %>%dplyr::filter(ydstogo >6)%>%filter(!is.na(Receiver)) %>%filter(!is.na(PassLocation))%>%dplyr::count(Receiver,PassLocation)%>%dplyr::top_n(50)%>%
+  ggplot(mapping = aes(x=PassLocation, y=Receiver,fill=n)) + 
+  geom_raster(hjust = 0, vjust = 0) + (theme(axis.text.y = element_text(lineheight = .5, size = 7))) +
+  ggtitle("Top 50 Receivers Targeted on 3rd Down by Pass Location") 
+```
+
+Antonio Gates has been his favorite receiver on 3rd down. Despite high numbers for Rivers across 3 receivers the Chargers have not faced an atypical number of 3rd and long situations. 
+Interesing that Danny Amendola cracks the top 50 with number of targets over the middle. Maybe this is a result of lining upin the slot?
+```{r Top 25 Receiver Targets by QB}
+d2_3rd_down %>%dplyr::filter(ydstogo >6)%>%filter(!is.na(Receiver))%>%filter(!is.na(Passer)) %>%dplyr::count(Receiver,Passer)%>% dplyr::top_n(25)%>%
+  ggplot(mapping = aes(x=Passer, y=Receiver,fill=n)) + geom_raster(hjust = 0, vjust = 0) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Top 25 Reveiver Targets by QB") +
+  geom_text(aes(label = n), size = 4, family = "Times", colour = "red")
+```
+
+```{r}
+ggplot(data = d2_3rd_down,mapping = aes(x=ydstogo)) + geom_freqpoly(mapping = aes(color = posteam),binwidth=1)
+```
+
+## 4th Down & Less Attempts
+If you have a question like “if it’s fourth down and less than 3 yards should the team go for it or attempt a field goal in the 40 yard range?” I can filter examples of fourth down and less than 3 yards and calculate the percentage of first downs gained versus field goals between 40 and 50 yards that are good.
+```{r 4th Down Conversions}
+FourthConv <- filter(d2, down == 4, ydstogo < 3)
+table(FourthConv$FirstDown)
+```
+```{r 4th Down & Less Attempts %}
+5088/(5088 + 1904)*100
+```
+
+```{r Field Goal Attemps}
+FG <- filter(d2, FieldGoalDistance < 50 | FieldGoalDistance > 40)
+table(FG$FieldGoalResult)
+```
+
+```{r Field Goal Attemps%}
+7479/(197 + 7479 + 1272)*100
+```
+
+```{r Percentage of completions per attempt:}
+t1 = table(d2$PassAttempt)
+t2 = table(d2$PassOutcome)
+pr_1 = t2[1]/t1[2]
+pr_1*100
+```
+
+One can see that almost 60% attempts get completed. Which is quite good news for the team franchise as the percentage is fair enough. 
+
+```{r Average Yards Gained Per Attempt}
+d3 = d2[d2$PassAttempt == 1,]
+mean(d3$Yards.Gained)
+```
+
+The value of the average yards gained per attempt can be found to be almost 7.
+
+```{r Touchdown Passes per Attempt%}
+t3 = table(d3$Touchdown)
+pr_2 = t3[2]/t1[2]
+pr_2*100
+```
+
+Almost 5% of the touchdown passes get completion per attempt.
+
+```{r Interceptions Per Attempt%}
+t4 = table(d2$InterceptionThrown)
+pr_3 = t4[2]/t1[2]
+pr_3*100
+
+```
+
+One can see that nearly 3% of the interceptions get completed per attempt and which is moderately low.
+
+The most important question can be arised by asking the following question. Which attributes have the greatest impact on the scoring?
+
+```{r Predictive modeling}
+dwn4 = filter(d2, down == 4, ydstogo < 3)
+table(dwn4$FirstDown)
+5088/(5088 + 1904)
+frwd_goal = filter(d2, FieldGoalDistance < 50 | FieldGoalDistance > 40)
+table(frwd_goal$FieldGoalResult)
+7479/(197 + 7479 + 1272)
+
+
+```
+
+From the analysis, it seems that it is better attempting the field goal rather than the previous option. 
+
+# Summarizing the d1:
+
+Here we counted the total number of fumbles, sacks, rushing and passing attempts and the percentage of pass attempts. Finally, a column is created based on whether the game was won by the team or not based on the max score for both teams. The summary function in R has been used to see the descriptive statistics for each column.
+
+```{r Group and Summarize d1}
+
+all_stat = filter(d2, PlayType %in% c("Pass", "Run", "Sack")) %>%
+  mutate(PassingYards = ifelse(PassAttempt == 1, Yards.Gained, 0), 
+         RushingYards = ifelse(RushAttempt == 1, Yards.Gained, 0)) %>%
+  group_by(GameID, posteam, Season) %>% 
+  summarize(TotalInts = sum(InterceptionThrown), 
+            Score = max(PosTeamScore), 
+            Fumbles = sum(Fumble), 
+            Sacks = sum(Sack), 
+            PassYards = sum(PassingYards), 
+            RushYards = sum(RushingYards), 
+            TotalYards = sum(PassingYards + RushingYards), 
+            RushAttempts = sum(RushAttempt), 
+            PassAttempts = sum(PassAttempt), 
+            PassPerc = PassAttempts/(RushAttempts + PassAttempts), 
+            AvgRush = RushYards/RushAttempts) %>%
+  filter(posteam != "")
+summary(all_stat[4:14])
+
+
+```
+
+The starting point for the predictive analysis could be a simple linear regression based on some intuitive idea about the most significant predictor that could affect the scoring in a game. So, the predictor is taken as Toral yards. In the next section we move on to build some multiple linear regression model to improve the accuracy and goodness of fit of the model to the d1. The results for the simple linear regression is given below. Firstly, a plot is given to understand the matter a little bit and then a model is shown with proper interpretation.The regression model is fit on a train d1 and further that model has been checked on the test d1 for the accuracy part.
+
+```{r Regression Modeling}
+ggplot(all_stat, aes(x = TotalYards, y = Score)) + geom_point()+
+  geom_hex(bins = 40)
+
+round(cor(all_stat$TotalYards, all_stat$Score),4)
+set.seed(123)
+split = sample.split(all_stat$Season, SplitRatio = .7)
+Train = subset(all_stat, split == TRUE)
+Test = subset(all_stat, split == FALSE)
+
+lm_fit = lm(Score ~ TotalYards, data = Train)
+summary(lm_fit)
+par(mfrow = c(2,2))
+plot(lm_fit)
+```
+
+From the Pearson correlation coefficient, it is evident that the relation between the predictor and the response variable is quite high since it is greater than 0.5. Now from the plot, it is evident that there exists a positive correlation which is vividly seen. Now, coming to the regression model summary it is seen that the predictor, Total yard is highly significant under significance level of 5% but the adjusted R-squared is almost 0.3472 which implies that only 35% variance of the response variable is predicted by the predictor variable. The diagnostic plots tell us that almost all the assumptions of the linear regression meet quite well but the normality assumption of the residuals seem to deviate a bit at one end of the tail. So, an improvement in the model is truly necessary. 
+
+```{r}
+cor(all_stat$TotalYards, all_stat$Score)
+```
+
+From the graph we can see that there appears to be a positive linear relationship between the 2 variables, although it is very spread out, but there is a concentration in the middle. The correlation of .5946 shows that there is moderate positive coorlation between the two variables. Next I’ll seperate the d1 into train and test samples and do linear regression to see if there is statistical significance between the variables.
+
+```{r}
+set.seed(77)
+split <- sample.split(all_stat$Season, SplitRatio = .6)
+TotalStatsTrain <- subset(all_stat, split == TRUE)
+TotalStatsTest <- subset(all_stat, split == FALSE)
+
+n <- lm(Score ~ TotalYards, data = TotalStatsTrain)
+summary(n)
+```
+
+We see that TotalYards is statistically signifiant, containing a p-value of <2e-16. If we had the total number of yards from a game we would be able to estimate the score by the equation y=.071678x-5.289026. However, the R-square value is on the lower side at .3578, meaning that only 35.78% of the score is explained by the totalyards. Next, I’ll test the model on the test d1 to ensure the model is correctly predicting the d1.
+
+# Checking the validation of the model on the test d1:
+
+```{r Validation of the Model}
+Test_R_squared = function(y, testd1, model, testY) {
+  predictest = predict(model, testd1)
+  SSE = sum((testY-predictest)^2, na.rm=TRUE)
+  SST = sum((testY - mean(y, na.rm=TRUE))^2, na.rm=TRUE)
+  1-SSE/SST
+}
+
+
+Test_R_squared(all_stat$Score, Test, lm_fit, Test$Score)
+Test_1 = predict(lm_fit, Test)
+head(cbind(Test_1, Test$Score))
+
+```
+
+The R-squared seems to be quite similar to that of the model on the training d1 and hence the model seems to be evaluated perfectly as far as this d1 is concerned. But the R-squared being low we can't estimate the score with better accuracy. So, to improve that we build the next multiple linear regression model.
+
+# Multiple linear regression model:
+
+The model has been tried with new different predictors to increase the accuracy of the model. The results and implications of the model are shown below.
+
+```{r Multiple Linear Regression Model}
+lm_fit_2 = lm(Score ~ PassYards + RushYards + TotalInts + Sacks + Fumbles, 
+              data = Train)
+summary(lm_fit_2)
+plot(lm_fit_2) 
+Test_R_squared(all_stat$Score, Test, lm_fit_2, Test$Score)
+```
+
+
+The results imply that every predictor is highly significant and the adjusted R-squared also gets increased than the previous model.The model seems to fit the test d1 also quite well. From this d1 one can see that rushing yards result in slightly more points that passing yards, sacks prevent slightly more points than fumbles and interceptions result in 1 less point over sacks. one can definitely compare with just one team to see how things vary. So, we will filter the d1 for New England to see how they're formula for scoring compares.
+
+```{r}
+NE = filter(all_stat, posteam == "NE")
+lm_fit_3 = lm(Score ~ PassYards + RushYards + TotalInts + Sacks + Fumbles, 
+              data = NE)
+summary(lm_fit_3)
+plot(lm_fit_3)
+
+```
+
+Both passing and rushing yards are higher than the general equation, which suggests that there will be more scoring efficiency. Also, sacks aren't significant. This could help with game planning when playing some particular teams to reduce their scoring potential.
+
+# ANOVA:
+
+```{r ANOVA}
+anova_res = aov(all_stat$PassPerc ~ as.factor(all_stat$Season))
+summary(anova_res)
+
+```
+
+The significant p-value suggests that there is significant difference between mean pass percentage accross different seasons. 
+
+# Conclusions:
+
+Even though arrest have been decreased dramatically it may not be suitable to place an arrest bet this year rather its a good news for the team management. But it can be assumed that an Offensive Guard (OG) will be arrested in 2019, It can also be bet that someone will be arrested in the month of February, It can also be presumed that Adam Jones will be arrested again in the updcoming years. Some of it I expected, we see that 2015 and 2016 are statistically different from 2009 and then also 2015 and 2016 are statistically different from 2010 and 2011. This makes sense as there may not be enough difference from one year to the other, the year 2017 is actually quite identical to 2012. It will be quite unpredictable or surprising to see how 2018 and future seasons compare to this to see if this is a new trend or if 2017 was just an anomaly.
+
+
